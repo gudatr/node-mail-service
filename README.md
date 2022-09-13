@@ -81,4 +81,5 @@ If you stumble upon a 5xx error that could be caused by the service itself, plea
 
 ### 4. Other
 
-Otherwise you have to resort to checking the error on google as smtp servers are very strange beasts with each one being not like another
+Otherwise you have to resort to checking the error on google as smtp servers are very strange beasts with each one being not like another.
+Error codes are standardized but the acceptance of parameters, hidden reputation systems and required headers can vary.
