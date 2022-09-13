@@ -5,7 +5,7 @@ import * as fs from "fs";
 export default class MailService {
 
     app: TemplatedApp;
-    mailer: SendMailFn;
+    mailer: SendMailFn | null = null;
 
     constructor(
         public default_sender_name: string,
