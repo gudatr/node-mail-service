@@ -13,8 +13,9 @@ export default class MailService {
         ssl = true,
         key_file_name: string = 'mail.key',
         cert_file_name: string = 'server.crt',
+        public debug = false,
         public pass: string = '',
-        public dkim: string = 'dkim_private.pem',
+        public dkim: string | undefined = 'dkim_private.pem',
         public dkim_format: BufferEncoding = 'utf-8',
         public key_selector: string = 'mails',
         public maxPayload: number = 256 * 1024) {
@@ -83,14 +84,21 @@ export default class MailService {
 
     async mail(from: string, sender: string, to: string, replyTo: string, subject: string, html: string) {
         return new Promise((resolve: (domain: string) => void, reject: (err: Error) => void) => {
-            if (!this.mailer)
-                this.mailer = sendmail({
-                    silent: true,
-                    dkim: {
-                        privateKey: fs.readFileSync(this.dkim, this.dkim_format),
-                        keySelector: this.key_selector
-                    }
-                });
+            if (!this.mailer) {
+                if (this.dkim) {
+                    this.mailer = sendmail({
+                        silent: this.debug,
+                        dkim: {
+                            privateKey: fs.readFileSync(this.dkim, this.dkim_format),
+                            keySelector: this.key_selector
+                        }
+                    });
+                } else {
+                    this.mailer = sendmail({
+                        silent: this.debug
+                    });
+                }
+            }
 
             this.mailer({ from, sender, to, replyTo, subject, html }, (err, domain) => {
                 if (err) return reject(err);
