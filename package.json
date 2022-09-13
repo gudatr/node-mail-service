@@ -1,0 +1,27 @@
+{
+  "name": "mail-service",
+  "version": "1.0.0",
+  "description": "A nodejs based websocket service you can relay sending out mails to",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gudatr/node-mail-service.git"
+  },
+  "author": "Gudatr",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gudatr/node-mail-service/issues"
+  },
+  "homepage": "https://github.com/gudatr/node-mail-service#readme",
+  "dependencies": {
+    "@types/node": "^18.7.17",
+    "sendmail": "^1.6.1",
+    "uws": "uNetworking/uWebSockets.js#v20.10.0"
+  },
+  "devDependencies": {
+    "@types/sendmail": "^1.4.4"
+  }
+}
