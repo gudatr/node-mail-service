@@ -13,7 +13,7 @@ let mailer = new MailService(
 true,                  // Enable SSL, recommended
 'mail.key',            // SSL key file, leave empty if not needed
 'server.crt',          // SSL cert, leave empty if not needed
-'passphrase',          // A passphrase for the webservice
+'passphrase',          // A passphrase for the webservice, leave empty if not needed
 'dkim_private.pem',    // A DKIM private key used for verifing your server's sending rights
 'utf-8',               // DKIM file encoding
 'mailkey',             // The name of your DKIM selector in your DNS configuration
