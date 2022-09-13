@@ -40,7 +40,9 @@ export default class MailService {
                 res.onAborted(aborted);
 
                 if (this.pass !== '' && req.getQuery() !== this.pass) {
-                    return res.writeStatus('401 Unauthorized')
+                    res.writeStatus('401 Unauthorized');
+                    res.end('401 Unauthorized', true);
+                    return;
                 }
 
                 res.upgrade({},
