@@ -75,10 +75,10 @@ Mail server reponse:
 This is what you would want normally. Everything was fine and the connection was closed.
 If your mail was not delivered that probably means your server has a bad reputation or the mail content didnt pass a filter.
 
-Otherwise read up on the concrete error:
-https://en.wikipedia.org/wiki/List_of_SMTP_server_return_codes
-
 ### 3. Error 5xx
 
 If you stumble upon a 5xx error that could be caused by the service itself, please open an issue with the steps to reproduce it.
 
+### 4. Other
+
+Otherwise you have to resort to checking the error on google as smtp servers are very strange beasts with each one being not like another
