@@ -1,4 +1,4 @@
-import { SSLApp, App, TemplatedApp, WebSocket, us_listen_socket_close } from "uws";
+import { SSLApp, App, TemplatedApp, WebSocket } from "uws";
 import sendmail from 'sendmail';
 import * as fs from "fs";
 
@@ -13,8 +13,7 @@ export default class MailService {
         ssl = true,
         key_file_name: string = 'mail.key',
         cert_file_name: string = 'server.crt',
-        public user: string = '',
-        public password: string = '',
+        public pass: string = '',
         public dkim: string = 'dkim_private.pem',
         public dkim_format: BufferEncoding = 'utf-8',
         public key_selector: string = 'mails',
@@ -34,13 +33,12 @@ export default class MailService {
         this.app.ws('/mail', {
             idleTimeout: 0,
             maxPayloadLength: maxPayload,
-            message: this.sendMail,
+            message: (ws, message, isbinary) => { this.sendMail(ws, message, isbinary) },
 
             upgrade: (res, req, context) => {
                 res.onAborted(aborted);
 
-                if (this.user !== '' && req.getHeader('user') !== this.user ||
-                    this.password !== '' && req.getHeader('password') !== this.password) {
+                if (this.pass !== '' && req.getQuery() !== this.pass) {
                     return res.writeStatus('401 Unauthorized')
                 }
 
@@ -63,20 +61,24 @@ export default class MailService {
     }
 
     sendMail(ws: WebSocket, message: ArrayBuffer, _isBinary: boolean) {
-        let data = JSON.parse(Buffer.from(message).toString());
-        this.mail(
-            data.from ?? this.default_sender_email,
-            data.sender ?? this.default_sender_name,
-            data.to,
-            data.replyTo,
-            data.subject,
-            data.html)
-            .then(result => {
-                try { ws.send(data.id ?? 0 + result); } catch (err) { }
-            })
-            .catch(err => {
-                try { ws.send(data.id ?? 0 + err.message); } catch (err) { }
-            });
+        try {
+            let data = JSON.parse(Buffer.from(message).toString());
+            this.mail(
+                data.from ?? this.default_sender_email,
+                data.sender ?? this.default_sender_name,
+                data.to,
+                data.replyTo,
+                data.subject,
+                data.html)
+                .then(result => {
+                    try { ws.send(data.id ?? 0 + result); } catch (err) { }
+                })
+                .catch(err => {
+                    try { ws.send(data.id ?? 0 + err.message); } catch (err) { }
+                });
+        } catch (err: any) {
+            try { ws.send(err.message ?? ''); } catch (err) { }
+        }
     }
 
     async mail(from: string, sender: string, to: string, replyTo: string, subject: string, html: string) {
