@@ -1,6 +1,17 @@
 # Node Mail Service
 A nodejs based websocket service you can relay sending out mails to
 
+## Installation
+
+Add the repository as a depency
+```
+npm install gudatr/node-mail-service
+```
+
+And import the mail service class
+```javascript
+import MailService from "mail-service";
+```
 
 ## Usage
 
