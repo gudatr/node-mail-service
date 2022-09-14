@@ -72,7 +72,8 @@ export default class MailService {
                 data.to,
                 data.replyTo,
                 data.subject,
-                data.html)
+                data.html,
+                data.text)
                 .then(result => {
                     try { ws.send(data.id ?? 0 + result); } catch (err) { }
                 })
@@ -84,7 +85,7 @@ export default class MailService {
         }
     }
 
-    async mail(from: string, sender: string, to: string, replyTo: string, subject: string, html: string) {
+    async mail(from: string, sender: string, to: string, replyTo: string, subject: string, html: string, text: string | undefined) {
         return new Promise((resolve: (domain: string) => void, reject: (err: Error) => void) => {
             if (!this.mailer) {
                 if (this.dkim) {
@@ -102,7 +103,7 @@ export default class MailService {
                 }
             }
 
-            this.mailer({ from, sender, to, replyTo, subject, html }, (err, domain) => {
+            this.mailer({ from, sender, to, replyTo, subject, html, text }, (err, domain) => {
                 if (err) return reject(err);
                 resolve(domain);
             });
