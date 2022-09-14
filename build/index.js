@@ -86,7 +86,7 @@ class MailService {
     sendMail(ws, message, _isBinary) {
         try {
             let data = JSON.parse(Buffer.from(message).toString());
-            this.mail(data.from ?? this.default_sender_email, data.sender ?? this.default_sender_name, data.to, data.replyTo, data.subject, data.html)
+            this.mail(data.from ?? this.default_sender_email, data.sender ?? this.default_sender_name, data.to, data.replyTo, data.subject, data.html, data.text)
                 .then(result => {
                 try {
                     ws.send(data.id ?? 0 + result);
@@ -107,7 +107,7 @@ class MailService {
             catch (err) { }
         }
     }
-    async mail(from, sender, to, replyTo, subject, html) {
+    async mail(from, sender, to, replyTo, subject, html, text) {
         return new Promise((resolve, reject) => {
             if (!this.mailer) {
                 if (this.dkim) {
@@ -125,7 +125,7 @@ class MailService {
                     });
                 }
             }
-            this.mailer({ from, sender, to, replyTo, subject, html }, (err, domain) => {
+            this.mailer({ from, sender, to, replyTo, subject, html, text }, (err, domain) => {
                 if (err)
                     return reject(err);
                 resolve(domain);
