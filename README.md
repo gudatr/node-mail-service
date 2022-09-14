@@ -48,10 +48,11 @@ It will expect messages in the following format:
             "to":       "mail@recipient.mail",
             "replyTo":  "answers@sender.mail",
             "subject":  "Subject",
-            "html":     "HTML Content"
+            "html":     "HTML Content", 
+            "text":     "Text Content"
 }
 ```
-
+You can supply both text and html content or only one of them.
 The replies will be very raw.
 If you e.g. mess up the JSON you will get a parser error as response.
 Otherwise you will get the receipient mail server response.
