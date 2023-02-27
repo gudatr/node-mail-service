@@ -1,11 +1,7 @@
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -30,16 +26,6 @@ const uws_1 = require("uws");
 const sendmail_1 = __importDefault(require("sendmail"));
 const fs = __importStar(require("fs"));
 class MailService {
-    default_sender_name;
-    default_sender_email;
-    debug;
-    pass;
-    dkim;
-    dkim_format;
-    key_selector;
-    maxPayload;
-    app;
-    mailer = null;
     constructor(default_sender_name, default_sender_email, ssl = true, key_file_name = 'mail.key', cert_file_name = 'server.crt', debug = false, pass = '', dkim = 'dkim_private.pem', dkim_format = 'utf-8', key_selector = 'mails', maxPayload = 256 * 1024) {
         this.default_sender_name = default_sender_name;
         this.default_sender_email = default_sender_email;
@@ -49,6 +35,7 @@ class MailService {
         this.dkim_format = dkim_format;
         this.key_selector = key_selector;
         this.maxPayload = maxPayload;
+        this.mailer = null;
         if (ssl) {
             this.app = (0, uws_1.SSLApp)({
                 key_file_name,
@@ -59,19 +46,22 @@ class MailService {
             this.app = (0, uws_1.App)({});
         }
         let aborted = () => { };
-        this.app.ws('/mail', {
-            idleTimeout: 0,
-            maxPayloadLength: maxPayload,
-            message: (ws, message, isbinary) => { this.sendMail(ws, message, isbinary); },
-            upgrade: (res, req, context) => {
-                res.onAborted(aborted);
-                if (this.pass !== '' && req.getQuery() !== this.pass) {
-                    res.writeStatus('401 Unauthorized');
-                    res.end('401 Unauthorized', true);
-                    return;
+        this.app.post('/mail', (response, request) => {
+            response.onAborted(() => response.ended = true);
+            if (this.pass != '' && request.getQuery() !== this.pass) {
+                response.writeStatus('401 Unauthorized');
+                response.end('401 Unauthorized', true);
+                return;
+            }
+            let body = Buffer.from('');
+            response.onData(async (data, isLast) => {
+                body = Buffer.concat([body, Buffer.from(data)]);
+                if (body.length > maxPayload)
+                    return response.end('Payload exceeded ' + maxPayload);
+                if (isLast) {
+                    this.sendMail(response, body.toString());
                 }
-                res.upgrade({}, req.getHeader('sec-websocket-key'), req.getHeader('sec-websocket-protocol'), req.getHeader('sec-websocket-extensions'), context);
-            },
+            });
         });
     }
     listen(host, port) {
@@ -83,28 +73,22 @@ class MailService {
             });
         });
     }
-    sendMail(ws, message, _isBinary) {
+    sendMail(response, message) {
         try {
-            let data = JSON.parse(Buffer.from(message).toString());
+            let data = JSON.parse(message);
             this.mail(data.from ?? this.default_sender_email, data.sender ?? this.default_sender_name, data.to, data.replyTo, data.subject, data.html, data.text)
                 .then(result => {
-                try {
-                    ws.send(data.id ?? 0 + result);
-                }
-                catch (err) { }
+                if (!response.ended)
+                    response.send(data.id ?? 0 + result);
             })
                 .catch(err => {
-                try {
-                    ws.send(data.id ?? 0 + err.message);
-                }
-                catch (err) { }
+                if (!response.ended)
+                    response.send(data.id ?? 0 + err.message);
             });
         }
         catch (err) {
-            try {
-                ws.send(err.message ?? '');
-            }
-            catch (err) { }
+            if (!response.ended)
+                response.send(err.message);
         }
     }
     async mail(from, sender, to, replyTo, subject, html, text) {
