@@ -6,6 +6,7 @@ export default class MailService {
 
     app: TemplatedApp;
     mailer: SendMailFn | null = null;
+    private_key: string;
 
     constructor(
         public default_sender_name: string,
@@ -29,8 +30,6 @@ export default class MailService {
             this.app = App({});
         }
 
-        let aborted = () => { };
-
         this.app.post('/mail', (response, request) => {
 
             response.onAborted(() => response.ended = true);
@@ -52,6 +51,8 @@ export default class MailService {
                 }
             });
         });
+
+        this.private_key = fs.readFileSync(this.dkim, this.dkim_format);
     }
 
     listen(host: string, port: number): Promise<boolean> {
@@ -63,7 +64,7 @@ export default class MailService {
         });
     }
 
-    sendMail(response: HttpResponse, message: string) {
+    sendMail(response: HttpResponse | null, message: string) {
         try {
             let data = JSON.parse(message);
             this.mail(
@@ -75,13 +76,13 @@ export default class MailService {
                 data.html,
                 data.text)
                 .then(result => {
-                    if (!response.ended) response.send(data.id ?? 0 + result);
+                    if (response && !response.ended) response.send(data.id ?? 0 + result);
                 })
                 .catch(err => {
-                    if (!response.ended) response.send(data.id ?? 0 + err.message);
+                    if (response && !response.ended) response.send(data.id ?? 0 + err.message);
                 });
         } catch (err: any) {
-            if (!response.ended) response.send(err.message);
+            if (response && !response.ended) response.send(err.message);
         }
     }
 
@@ -92,7 +93,7 @@ export default class MailService {
                     this.mailer = sendmail({
                         silent: this.debug,
                         dkim: {
-                            privateKey: fs.readFileSync(this.dkim, this.dkim_format),
+                            privateKey: this.private_key,
                             keySelector: this.key_selector
                         }
                     });

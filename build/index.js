@@ -45,7 +45,6 @@ class MailService {
         else {
             this.app = (0, uws_1.App)({});
         }
-        let aborted = () => { };
         this.app.post('/mail', (response, request) => {
             response.onAborted(() => response.ended = true);
             if (this.pass != '' && request.getQuery() !== this.pass) {
@@ -63,6 +62,7 @@ class MailService {
                 }
             });
         });
+        this.private_key = fs.readFileSync(this.dkim, this.dkim_format);
     }
     listen(host, port) {
         return new Promise((resolve, reject) => {
@@ -78,16 +78,16 @@ class MailService {
             let data = JSON.parse(message);
             this.mail(data.from ?? this.default_sender_email, data.sender ?? this.default_sender_name, data.to, data.replyTo, data.subject, data.html, data.text)
                 .then(result => {
-                if (!response.ended)
+                if (response && !response.ended)
                     response.send(data.id ?? 0 + result);
             })
                 .catch(err => {
-                if (!response.ended)
+                if (response && !response.ended)
                     response.send(data.id ?? 0 + err.message);
             });
         }
         catch (err) {
-            if (!response.ended)
+            if (response && !response.ended)
                 response.send(err.message);
         }
     }
@@ -98,7 +98,7 @@ class MailService {
                     this.mailer = (0, sendmail_1.default)({
                         silent: this.debug,
                         dkim: {
-                            privateKey: fs.readFileSync(this.dkim, this.dkim_format),
+                            privateKey: this.private_key,
                             keySelector: this.key_selector
                         }
                     });
