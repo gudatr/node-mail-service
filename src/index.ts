@@ -14,7 +14,7 @@ export default class MailService {
         public ssl = true,
         public key_file_name: string = 'mail.key',
         public cert_file_name: string = 'server.crt',
-        public debug = false,
+        public silent = true,
         public pass: string = '',
         public dkim: string | undefined = 'dkim_private.pem',
         public dkim_format: BufferEncoding = 'utf-8',
@@ -92,7 +92,7 @@ export default class MailService {
             if (!this.mailer) {
                 if (this.dkim) {
                     this.mailer = sendmail({
-                        silent: this.debug,
+                        silent: this.silent,
                         dkim: {
                             privateKey: fs.readFileSync(this.dkim, this.dkim_format),
                             keySelector: this.key_selector
@@ -100,7 +100,7 @@ export default class MailService {
                     });
                 } else {
                     this.mailer = sendmail({
-                        silent: this.debug
+                        silent: this.silent
                     });
                 }
             }

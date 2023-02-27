@@ -24,7 +24,7 @@ let mailer = new MailService(
 true,                  // Enable SSL, recommended
 'mail.key',            // SSL key file, leave empty if not needed
 'mail.crt',            // SSL cert, leave empty if not needed
-true,                  // Enable debug output to console for mail send process
+true,                  // Disable output to console for mail send process
 'passphrase',          // A passphrase for the webservice, leave empty if not needed
 'dkim.pem',            // A DKIM private key used for verifing your server's sending rights
 'utf-8',               // DKIM file encoding
