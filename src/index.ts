@@ -1,4 +1,4 @@
-import { SSLApp, App, TemplatedApp, WebSocket } from "uws";
+import { SSLApp, App, TemplatedApp, WebSocket, HttpResponse } from "uws";
 import sendmail from 'sendmail';
 import * as fs from "fs";
 
@@ -31,26 +31,26 @@ export default class MailService {
 
         let aborted = () => { };
 
-        this.app.ws('/mail', {
-            idleTimeout: 0,
-            maxPayloadLength: maxPayload,
-            message: (ws, message, isbinary) => { this.sendMail(ws, message, isbinary) },
+        this.app.post('/mail', (response, request) => {
 
-            upgrade: (res, req, context) => {
-                res.onAborted(aborted);
+            response.onAborted(() => response.ended = true);
 
-                if (this.pass !== '' && req.getQuery() !== this.pass) {
-                    res.writeStatus('401 Unauthorized');
-                    res.end('401 Unauthorized', true);
-                    return;
+            if (this.pass != '' && request.getQuery() !== this.pass) {
+                response.writeStatus('401 Unauthorized');
+                response.end('401 Unauthorized', true);
+                return;
+            }
+
+            let body = Buffer.from('');
+            response.onData(async (data: ArrayBuffer, isLast: boolean) => {
+                body = Buffer.concat([body, Buffer.from(data)]);
+
+                if (body.length > maxPayload) return response.end('Payload exceeded ' + maxPayload);
+
+                if (isLast) {
+                    this.sendMail(response, body.toString());
                 }
-
-                res.upgrade({},
-                    req.getHeader('sec-websocket-key'),
-                    req.getHeader('sec-websocket-protocol'),
-                    req.getHeader('sec-websocket-extensions'),
-                    context);
-            },
+            });
         });
     }
 
@@ -63,9 +63,9 @@ export default class MailService {
         });
     }
 
-    sendMail(ws: WebSocket, message: ArrayBuffer, _isBinary: boolean) {
+    sendMail(response: HttpResponse, message: string) {
         try {
-            let data = JSON.parse(Buffer.from(message).toString());
+            let data = JSON.parse(message);
             this.mail(
                 data.from ?? this.default_sender_email,
                 data.sender ?? this.default_sender_name,
@@ -75,13 +75,13 @@ export default class MailService {
                 data.html,
                 data.text)
                 .then(result => {
-                    try { ws.send(data.id ?? 0 + result); } catch (err) { }
+                    if (!response.ended) response.send(data.id ?? 0 + result);
                 })
                 .catch(err => {
-                    try { ws.send(data.id ?? 0 + err.message); } catch (err) { }
+                    if (!response.ended) response.send(data.id ?? 0 + err.message);
                 });
         } catch (err: any) {
-            try { ws.send(err.message ?? ''); } catch (err) { }
+            if (!response.ended) response.send(err.message);
         }
     }
 

@@ -23,24 +23,24 @@ let mailer = new MailService(
 'default@sender.mail',  
 true,                  // Enable SSL, recommended
 'mail.key',            // SSL key file, leave empty if not needed
-'server.crt',          // SSL cert, leave empty if not needed
+'mail.crt',            // SSL cert, leave empty if not needed
+true,                  // Enable debug output to console for mail send process
 'passphrase',          // A passphrase for the webservice, leave empty if not needed
-'dkim_private.pem',    // A DKIM private key used for verifing your server's sending rights
+'dkim.pem',            // A DKIM private key used for verifing your server's sending rights
 'utf-8',               // DKIM file encoding
 'mailkey',             // The name of your DKIM selector in your DNS configuration
 256 * 1024);           // Maximum payload size for one websocket message in bytes
 
-await mailer.listen('0.0.0.0', 5000); //boolean, if listening was successful
+await mailer.listen('127.0.0.1', 5000); //boolean, if listening was successful
 ````
 Setting a passphrase is important but even better is to limit access to the service through ufw and such.
 
-
 Now you can contact the service with:
 ```javascript
-wss://theserversip:5000/mail?passphrase
+[POST] https://127.0.0.1:5000/mail?passphrase
 ```
 
-It will expect messages in the following format:
+It will expect the body to be in the following format:
 ```javascript
 {            
             "from":     "noreply@sender.mail'",
@@ -56,7 +56,6 @@ You can supply both text and html content or only one of them.
 The replies will be very raw.
 If you e.g. mess up the JSON you will get a parser error as response.
 Otherwise you will get the receipient mail server response.
-#### You can attach an "id" field to the message which will prefix the response.
 
 ## Trouble shooting
 
