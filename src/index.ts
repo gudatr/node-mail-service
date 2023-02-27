@@ -1,4 +1,4 @@
-import { SSLApp, App, TemplatedApp, WebSocket, HttpResponse } from "uws";
+import { SSLApp, App, TemplatedApp, HttpResponse } from "uws";
 import sendmail from 'sendmail';
 import * as fs from "fs";
 
@@ -11,9 +11,9 @@ export default class MailService {
     constructor(
         public default_sender_name: string,
         public default_sender_email: string,
-        ssl = true,
-        key_file_name: string = 'mail.key',
-        cert_file_name: string = 'server.crt',
+        public ssl = true,
+        public key_file_name: string = 'mail.key',
+        public cert_file_name: string = 'server.crt',
         public debug = false,
         public pass: string = '',
         public dkim: string | undefined = 'dkim_private.pem',
@@ -21,10 +21,14 @@ export default class MailService {
         public key_selector: string = 'mails',
         public maxPayload: number = 256 * 1024) {
 
-        if (ssl) {
+        this.private_key = fs.readFileSync(this.dkim, this.dkim_format);
+    }
+
+    listen(host: string, port: number): Promise<boolean> {
+        if (this.ssl) {
             this.app = SSLApp({
-                key_file_name,
-                cert_file_name
+                key_file_name: this.key_file_name,
+                cert_file_name: this.cert_file_name
             });
         } else {
             this.app = App({});
@@ -44,18 +48,18 @@ export default class MailService {
             response.onData(async (data: ArrayBuffer, isLast: boolean) => {
                 body = Buffer.concat([body, Buffer.from(data)]);
 
-                if (body.length > maxPayload) return response.end('Payload exceeded ' + maxPayload);
+                if (body.length > this.maxPayload) return response.end('Payload exceeded ' + this.maxPayload);
 
                 if (isLast) {
-                    this.sendMail(response, body.toString());
+                    try {
+                        this.sendMail(response, JSON.parse(body.toString()));
+                    } catch (err) {
+                        return response.end('Error parsing request: ' + err.message);
+                    }
                 }
             });
         });
 
-        this.private_key = fs.readFileSync(this.dkim, this.dkim_format);
-    }
-
-    listen(host: string, port: number): Promise<boolean> {
         return new Promise((resolve, reject) => {
             this.app.listen(host, port, (listen_socket) => {
                 if (listen_socket) return resolve(true);
@@ -64,9 +68,8 @@ export default class MailService {
         });
     }
 
-    sendMail(response: HttpResponse | null, message: string) {
+    sendMail(data: any, response: HttpResponse | null = null) {
         try {
-            let data = JSON.parse(message);
             this.mail(
                 data.from ?? this.default_sender_email,
                 data.sender ?? this.default_sender_name,
