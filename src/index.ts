@@ -20,8 +20,6 @@ export default class MailService {
         public dkim_format: BufferEncoding = 'utf-8',
         public key_selector: string = 'mails',
         public maxPayload: number = 256 * 1024) {
-
-        this.private_key = fs.readFileSync(this.dkim, this.dkim_format);
     }
 
     listen(host: string, port: number): Promise<boolean> {
@@ -96,7 +94,7 @@ export default class MailService {
                     this.mailer = sendmail({
                         silent: this.debug,
                         dkim: {
-                            privateKey: this.private_key,
+                            privateKey: fs.readFileSync(this.dkim, this.dkim_format),
                             keySelector: this.key_selector
                         }
                     });

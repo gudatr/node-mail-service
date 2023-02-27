@@ -39,7 +39,6 @@ class MailService {
         this.key_selector = key_selector;
         this.maxPayload = maxPayload;
         this.mailer = null;
-        this.private_key = fs.readFileSync(this.dkim, this.dkim_format);
     }
     listen(host, port) {
         if (this.ssl) {
@@ -105,7 +104,7 @@ class MailService {
                     this.mailer = (0, sendmail_1.default)({
                         silent: this.debug,
                         dkim: {
-                            privateKey: this.private_key,
+                            privateKey: fs.readFileSync(this.dkim, this.dkim_format),
                             keySelector: this.key_selector
                         }
                     });
