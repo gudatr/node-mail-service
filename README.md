@@ -1,5 +1,5 @@
 # Node Mail Service
-A nodejs based websocket service you can relay sending out mails to
+A nodejs based service you can relay sending out mails to
 
 ## Installation
 
