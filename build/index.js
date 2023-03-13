@@ -26,13 +26,13 @@ const uws_1 = require("uws");
 const sendmail_1 = __importDefault(require("sendmail"));
 const fs = __importStar(require("fs"));
 class MailService {
-    constructor(default_sender_name, default_sender_email, ssl = true, key_file_name = 'mail.key', cert_file_name = 'server.crt', debug = false, pass = '', dkim = 'dkim_private.pem', dkim_format = 'utf-8', key_selector = 'mails', maxPayload = 256 * 1024) {
+    constructor(default_sender_name, default_sender_email, ssl = true, key_file_name = 'mail.key', cert_file_name = 'server.crt', silent = true, pass = '', dkim = 'dkim_private.pem', dkim_format = 'utf-8', key_selector = 'mails', maxPayload = 256 * 1024) {
         this.default_sender_name = default_sender_name;
         this.default_sender_email = default_sender_email;
         this.ssl = ssl;
         this.key_file_name = key_file_name;
         this.cert_file_name = cert_file_name;
-        this.debug = debug;
+        this.silent = silent;
         this.pass = pass;
         this.dkim = dkim;
         this.dkim_format = dkim_format;
@@ -85,11 +85,11 @@ class MailService {
             this.mail(data.from ?? this.default_sender_email, data.sender ?? this.default_sender_name, data.to, data.replyTo, data.subject, data.html, data.text)
                 .then(result => {
                 if (response && !response.ended)
-                    response.send(data.id ?? 0 + result);
+                    response.send(result);
             })
                 .catch(err => {
                 if (response && !response.ended)
-                    response.send(data.id ?? 0 + err.message);
+                    response.send(err.message);
             });
         }
         catch (err) {
@@ -102,7 +102,7 @@ class MailService {
             if (!this.mailer) {
                 if (this.dkim) {
                     this.mailer = (0, sendmail_1.default)({
-                        silent: this.debug,
+                        silent: this.silent,
                         dkim: {
                             privateKey: fs.readFileSync(this.dkim, this.dkim_format),
                             keySelector: this.key_selector
@@ -111,7 +111,7 @@ class MailService {
                 }
                 else {
                     this.mailer = (0, sendmail_1.default)({
-                        silent: this.debug
+                        silent: this.silent
                     });
                 }
             }
